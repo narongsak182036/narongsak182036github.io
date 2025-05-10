@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบพูดคุยด้วยเสียง | AI Voice Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary-color: #10b981;
+      --dark-color: #1e293b;
+      --light-color: #f8fafc;
+      --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+    }
+    
+    body {
+      font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      background-color: #0f172a;
+      color: var(--light-color);
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(236, 236, 245, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(219, 70, 239, 0.1) 0%, transparent 50%);
+    }
+    
+    h1 {
+      font-weight: 500;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+      color: #f8157f;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 30px;
+      font-weight: 300;
+    }
+    
+    #chat-container {
+      background: rgba(212, 223, 241, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      padding: 25px;
+      margin-top: 20px;
+      border: 1px solid rgba(243, 237, 237, 0.1);
+    }
+    
+    #chat-output {
+      min-height: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      margin: 25px 0;
+      text-align: left;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.5);
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) transparent;
+    }
+    
+    #chat-output::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #chat-output::-webkit-scrollbar-thumb {
+      background-color: var(--primary-color);
+      border-radius: 3px;
+    }
+    
+    .message {
+      padding: 12px 16px;
+      border-radius: 18px;
+      margin: 10px 0;
+      display: inline-block;
+      max-width: 85%;
+      position: relative;
+      line-height: 1.5;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .user-message {
+      background: var(--gradient);
+      color: white;
+      border-bottom-right-radius: 4px;
+      float: right;
+      clear: both;
+    }
+    
+    .bot-message {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--light-color);
+      border-bottom-left-radius: 4px;
+      float: left;
+      clear: both;
+    }
+    
+    .message-time {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 4px;
+      display: block;
+      text-align: right;
+    }
+    
+    #status {
+      margin: 15px 0;
+      font-style: italic;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    button:hover::after {
+      opacity: 1;
+    }
+    
+    #startBtn {
+      background: var(--gradient);
+      color: white;
+    }
+    
+    #startBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+    
+    #stopBtn {
+      background: #ef4444;
+      color: white;
+    }
+    
+    #stopBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+    
+    .tech-decoration {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    
+    .tech-decoration::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      top: -50px;
+      left: -50px;
+    }
+    
+    .tech-decoration::after {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(219, 70, 239, 0.15) 0%, transparent 70%);
+      bottom: -30px;
+      right: -30px;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      
+      #chat-container {
+        padding: 15px;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>ระบบพูดคุย อัจฉริยะ</h1>
+  <div id="chat-container">
+    <div id="status">สถานะ: พร้อมใช้งาน</div>
+    <div id="chat-output"></div>
+    <button id="startBtn"><span id="micIcon">🎤</span>Talk</button><span>
+    <button id="stopBtn">Stop</button><span></span>
+    <button id="clearBtn">Delete</button><span>
+  </div>
+
+  <script>
+    // ตรวจสอบการรองรับ API
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('ขออภัย เบราว์เซอร์ของคุณไม่รองรับการรู้จำเสียง');
+    }
+    if (!('speechSynthesis' in window)) {
+      alert('ขออภัย เบราว์เซอร์ของคุณไม่รองรับการพูดข้อความ');
+    }
+
+    // ตัวแปรระบบ
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    const synth = window.speechSynthesis;
+    let isListening = false;
+    let currentUtterance = null;
+
+    // องค์ประกอบ HTML
+    const chatOutput = document.getElementById('chat-output');
+    const statusDiv = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const micIcon = document.getElementById('micIcon');
+
+    // ตั้งค่าการรู้จำเสียง
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'th-TH';
+
+    // เริ่มการฟัง
+    startBtn.addEventListener('click', () => {
+      if (!isListening) {
+        recognition.start();
+        isListening = true;
+        statusDiv.textContent = 'สถานะ: กำลังฟัง...';
+        micIcon.textContent = '🔴';
+        addMessage('ระบบ', 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ สามารถพูดได้เลยนะครับ', 'bot');
+        speak('สวัสดีครับ พูดได้เลยครับ');
+      }
+    });
+
+    // หยุดการฟัง
+    stopBtn.addEventListener('click', () => {
+      if (isListening) {
+        recognition.stop();
+        isListening = false;
+        statusDiv.textContent = 'สถานะ: หยุดฟัง';
+        micIcon.textContent = '🎤';
+        addMessage('ระบบ', 'ระบบหยุดฟังแล้ว', 'bot');
+        speak('ระบบหยุดฟังแล้ว');
+      }
+    });
+
+    // ล้างการสนทนา
+    clearBtn.addEventListener('click', () => {
+      chatOutput.innerHTML = '';
+    });
+
+    // ฟังก์ชันพูด
+    function speak(text) {
+      if (synth.speaking) {
+        synth.cancel();
+      }
+      
+      currentUtterance = new SpeechSynthesisUtterance(text);
+      currentUtterance.lang = 'th-TH';
+      currentUtterance.rate = 1.0;
+      currentUtterance.pitch = 1.0;
+      
+      currentUtterance.onend = () => {
+        if (isListening) {
+          recognition.start(); // เริ่มฟังใหม่เมื่อพูดจบ
+        }
+      };
+      
+      synth.speak(currentUtterance);
+    }
+
+    // เพิ่มข้อความในแชท
+    function addMessage(sender, message, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+      messageDiv.className = type + '-message';
+      chatOutput.appendChild(messageDiv);
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    }
+
+    // ประมวลผลผลลัพธ์การรู้จำเสียง
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // แสดงผลลัพธ์ชั่วคราว
+      if (interimTranscript) {
+        const tempMessages = chatOutput.querySelectorAll('.temp-message');
+        tempMessages.forEach(msg => msg.remove());
+        
+        if (interimTranscript.trim() !== '') {
+          const tempDiv = document.createElement('div');
+          tempDiv.textContent = interimTranscript;
+          tempDiv.className = 'user-message temp-message';
+          tempDiv.style.opacity = '0.6';
+          chatOutput.appendChild(tempDiv);
+        }
+      }
+
+      // แสดงผลลัพธ์สุดท้าย
+      if (finalTranscript) {
+        const tempMessages = chatOutput.querySelectorAll('.temp-message');
+        tempMessages.forEach(msg => msg.remove());
+        
+        if (finalTranscript.trim() !== '') {
+          addMessage('คุณ', finalTranscript, 'user');
+          processUserInput(finalTranscript.trim().toLowerCase());
+        }
+      }
+    };
+
+    // ประมวลผลคำพูดผู้ใช้
+    function processUserInput(input) {
+      let response = '';
+      
+      // คำทักทาย
+      if (input.includes('สวัสดี') || input.includes('hello') || input.includes('hi')) {
+        response = 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ?';
+      } 
+      // คำถามทั่วไป
+      else if (input.includes('ชื่ออะไร') || input.includes('เรียกคุณว่า')) {
+        response = 'ฉันคือผู้ช่วยคุณมิสเตอร์ภาคิน เป็นผู้สร้างผมขึ้นมาเพื่อเป็นผู้ช่วยครับคุณสามารถเรียกผมว่า "พลอยลิน" ก็ได้ครับ';
+      }
+      else if (input.includes('เป็นอย่างไร') || input.includes('สบายดีไหม')| input.includes('วันนี้ดีไหม')) {
+        response = 'ฉันสบายดีครับ ขอบคุณที่ถาม แล้วคุณล่ะครับ สบายดีไหม?';
+    }
+
+        else if (input.includes('กลัวหนาว') || input.includes('กลัวหนาว')| input.includes('กลัวหนาว')) {
+            response = 'อาการกลัวหนาว อาจเป็นภาวะภายนอกเย็น หรือ หยางพร่อง", "อาจเกิดจากการขาดหยางหรือภาวะเลือดพร่อง?';
+            
+
+      }
+
+      else if (input.includes('อาหารเช้าทานอะไรดี') || input.includes('ข้าวเช้ากินอะไรดี')| input.includes('ตอนเช้ากินอะไรดี')) {
+            response = 'อาหารเช้าช่วงเช้าๆเเนะนำอาหารทีง่ายต่อการย่อยอาหารนะครับ เช้นข้าวต้ม โจ๊ก หรือร้านติ่มซำอาหารเช้า?';
+            
+
+      }
+
+      else if (input.includes('มีร้านติ่มซำอาหารเช้าเเนะนำไหม') || input.includes('มีร้านข้าวเช้ากินอะไรอร่อยๆไหม')| input.includes('ตอนเช้าไปทานที่ไหนดี')) {
+            response = 'ร้านอาหารเช้าช่วงเช้าๆที่เเนะนำ ควรเป็นร้านข้าวต้ม หรือร้านอาหารติ่มซำเเถวๆในเมืองโคราชได้ครับมีหลายร้านเลยถ้าให้เเนะนำสามารถบอกได้เลยนะครับ?';
+            
+
+      }
+      else if (input.includes('ช่วยเเนะนำร้านอาหารเช้าหน่อย') || input.includes('เเนะนำร้านติ่มซำหน่อย')| input.includes('ร้านทานอาหารเข้า')) {
+            response = 'ร้านอาหารเช้าช่วงเช้าๆที่เเนะนำ ร้านติ่มซำเเถวสามเเยกปัก ร้านอิ่มสุขที่ซิตี้ลิงก์คอนโด ร้านอาหารเช้าอื่นยังไม่มีข้อมูลครับ ?';
+            
+
+      }
+      else if (input.includes('ช่วยเเนะนำร้านหลังกินข้าวเช้าไปไหนดี') || input.includes('ช่วยเเนะนำร้านกาเเฟ')| input.includes('ร้านกาเเฟใกล้ฉัน')) {
+            response = 'ได้เลยครับ ตอนนี้ร้านกาเเฟในโคราชมีหลายร้านมากเลยครับ คุณต้องการร้านกาเเฟเเบบประมาณไหนครับ ผมสามารถหาร้านตามที่คุณต้องการได้นะครับ ?';
+            
+
+      }
+      else if (input.includes('ชีพจรเต้นเร็ว') || input.includes('ชีพจรเต้นเร็ว')| input.includes('ชีพจรเต้นเร็ว')) {
+            response = '(数脉):ชีพจรเต้นเร็ว อาจมีภาวะกลุ่มอาการร้อน 热证 หรือกลุ่มอาการภายในร้อน 里热证?';
+
+
+
+            
+
+      }
+    
+      else if (input.includes('น้องตองเป็นอย่างไร') || input.includes('ตองลักษณะอย่างไร')| input.includes('น้องตอง')) {
+            response = 'น้องตองเป็นคนร่าเริง ชอบพูด ชอบยิ้ม ชอบคุยครับ เเละอีกหนึ่งสิ่งที่ชอบคือชอบกิน?';
+
+
+
+            
+
+      }
+
+      else if (input.includes('ใบตอง') || input.includes('ตอง')| input.includes('ตรอง')) {
+            response = 'น้องตองเป็นหลานของหมอเป้ค่ะ ท่านผู้สร้างได้ให้ข้อมูลไว้กับฉัน?';
+
+
+            
+            
+
+      }
+
+      else if (input.includes('ฝากถึงใบตอง') || input.includes('ฝากถึงน้องตอง')| input.includes('อยากมีอะไรฝากถึงตอง')) {
+            response = 'ขอฝากถึงน้องตอง ให้คงความน่ารักเเบบนี้ตลอดไปเเละเชื่อฟังลุงนิก ย่าเเจ๋มเเละปู่เรียบ เชื่อฟังผู้ใหญ่เเละไม่ดื้อนะครับ?';
+
+
+            
+            
+
+      }
+
+      else if (input.includes('ขอบคุณ') || input.includes('thank you')) {
+        response = 'ยินดีครับ มีอะไรให้ช่วยอีกไหมครับ?';
+      }
+      // คำสั่งควบคุม
+      else if (input.includes('หยุด') || input.includes('stop')) {
+        response = 'กำลังหยุดระบบรับเสียงครับ';
+        recognition.stop();
+        isListening = false;
+        statusDiv.textContent = 'สถานะ: หยุดฟัง';
+        micIcon.textContent = '🎤';
+      }
+      else if (input.includes('ลบ') || input.includes('clear')) {
+        chatOutput.innerHTML = '';
+        response = 'ล้างการสนทนาเรียบร้อยแล้วครับ';
+      }
+      // คำถามอื่นๆ
+      else if (input.includes('เวลา')) {
+        const now = new Date();
+        const time = now.toLocaleTimeString('th-TH');
+        response = `ขณะนี้เวลา ${time} ครับ`;
+      }
+      else if (input.includes('วันนี้วันอะไร') || input.includes('วันที่เท่าไหร่')) {
+        const today = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        response = `วันนี้คือวันที่ ${today.toLocaleDateString('th-TH', options)} ครับ`;
+      }
+      else if (input.includes('อากาศ') || input.includes('weather')) {
+        response = 'ขออภัยครับ ผมไม่สามารถตรวจสอบสภาพอากาศได้ในขณะนี้';
+      }
+      // คำตอบเริ่มต้น
+      else {
+        const randomResponses = [
+          'ฉันไม่แน่ใจว่าเข้าใจถูกต้องไหมครับ',
+          'สามารถพูดใหม่อีกครั้งได้ไหมครับ?',
+          'ขอโทษค่ะ ฉันไม่เข้าใจคำถาม',
+          'คุณต้องการให้ช่วยอะไรเป็นพิเศษไหมครับ?'
+        ];
+        response = randomResponses[Math.floor(Math.random() * randomResponses.length)];
+      }
+      
+      addMessage('ระบบ', response, 'bot');
+      speak(response);
+    }
+
+    // จัดการข้อผิดพลาด
+    recognition.onerror = (event) => {
+      console.error('เกิดข้อผิดพลาด:', event.error);
+      statusDiv.textContent = 'สถานะ: เกิดข้อผิดพลาด';
+      micIcon.textContent = '🎤';
+      isListening = false;
+      
+      let errorMessage = 'เกิดข้อผิดพลาดในการรู้จำเสียง';
+      if (event.error === 'no-speech') {
+        errorMessage = 'ไม่พบเสียงพูด กรุณาลองอีกครั้ง';
+      } else if (event.error === 'audio-capture') {
+        errorMessage = 'ไม่พบไมโครโฟน กรุณาตรวจสอบการเชื่อมต่อ';
+      }
+      
+      addMessage('ระบบ', errorMessage, 'bot');
+      speak(errorMessage);
+    };
+
+    recognition.onend = () => {
+      if (isListening) {
+        recognition.start();
+      }
+    };
+
+    // คำแนะนำเริ่มต้น
+    addMessage('ระบบ', 'คลิกปุ่ม "เริ่มพูดคุย" เพื่อสนทนาด้วยเสียง', 'bot');
+  </script>
+</body>
+</html>
